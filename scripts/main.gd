@@ -522,7 +522,7 @@ func _save_project_to(path: String) -> void:
 		"frames": _serialize_frames(),
 		"graph": graph_editor.serialize_state() if graph_editor != null else {},
 	}
-	DirAccess.make_dir_absolute("C:/projects/VFXForge/exports")
+	DirAccess.make_dir_absolute(path.get_base_dir())
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file != null:
 		file.store_string(ProjectCodec.encode(project))
@@ -607,6 +607,31 @@ func _recover_autosave() -> void:
 	_load_project_from(path)
 	status_label.text = "Recovery snapshot loaded"
 
+static func _writable_dir(path: String) -> bool:
+	if DirAccess.make_dir_recursive_absolute(path) != OK:
+		return false
+	var probe := FileAccess.open(path.path_join(".write_probe"), FileAccess.WRITE)
+	if probe == null:
+		return false
+	probe.close()
+	DirAccess.remove_absolute(path.path_join(".write_probe"))
+	return true
+
+## Export destination, as a real filesystem path.
+##
+## A packaged build has res:// inside a read-only pack, so falling back to
+## user:// keeps exporting working instead of silently writing nothing.
+func _export_root() -> String:
+	var project_dir := ProjectSettings.globalize_path("res://exports")
+	if _writable_dir(project_dir):
+		return project_dir
+	var fallback := ProjectSettings.globalize_path("user://exports")
+	_writable_dir(fallback)
+	return fallback
+
+func _report_export_failure(label: String) -> void:
+	status_label.text = "%s export FAILED  |  could not write to %s" % [label, _export_root()]
+
 func _export_sprite_sheet() -> void:
 	if frames.is_empty():
 		return
@@ -614,10 +639,12 @@ func _export_sprite_sheet() -> void:
 	var columns: int = maxi(1, export_columns)
 	var rows: int = ceili(float(frames.size()) / columns)
 	var sheet := ImageExporter.make_sprite_sheet(_baked_output_frames(), columns, CANVAS_PIXEL_SIZE, export_padding)
-	DirAccess.make_dir_absolute("C:/projects/VFXForge/exports")
+	var root := _export_root()
 	var filename := PresetLibrary.file_slug(active_preset_name) + "_spritesheet.png"
-	sheet.save_png("res://exports/" + filename)
-	status_label.text = "Sprite sheet exported  |  exports/" + filename
+	if sheet.save_png(root.path_join(filename)) != OK:
+		_report_export_failure("Sprite sheet")
+		return
+	status_label.text = "Sprite sheet exported  |  " + root.path_join(filename)
 
 func _graph_output_format() -> String:
 	if graph_editor == null:
@@ -661,23 +688,32 @@ func _export_all() -> void:
 func _export_png_frames() -> void:
 	if frames.is_empty():
 		return
-	DirAccess.make_dir_absolute("C:/projects/VFXForge/exports/frames")
+	var root := _export_root()
 	var folder := PresetLibrary.file_slug(active_preset_name)
-	DirAccess.make_dir_absolute("C:/projects/VFXForge/exports/frames/" + folder)
+	var frame_dir := root.path_join("frames").path_join(folder)
+	if DirAccess.make_dir_recursive_absolute(frame_dir) != OK:
+		_report_export_failure("PNG frames")
+		return
 	var output_frames := _baked_output_frames()
 	for index in output_frames.size():
 		var frame_image := ImageExporter.canvas_to_image(output_frames[index], CANVAS_PIXEL_SIZE)
-		frame_image.save_png("res://exports/frames/%s/frame_%02d.png" % [folder, index + 1])
-	status_label.text = "PNG frames exported  |  exports/frames/%s/" % folder
+		if frame_image.save_png(frame_dir.path_join("frame_%02d.png" % (index + 1))) != OK:
+			_report_export_failure("PNG frames")
+			return
+	status_label.text = "PNG frames exported  |  " + frame_dir
 
 func _export_godot_sprite_frames() -> void:
 	_export_png_frames()
 	var folder := PresetLibrary.file_slug(active_preset_name)
-	var file_path := "res://exports/haribon_%s_sprite_frames.tres" % folder
+	var root := _export_root()
+	var file_path := root.path_join("haribon_%s_sprite_frames.tres" % folder)
 	var file := FileAccess.open(file_path, FileAccess.WRITE)
-	if file != null:
-		file.store_string(SpriteFramesExporter.build_resource(_baked_output_frames().size(), "res://exports/frames/%s" % folder, frames_per_second))
-		status_label.text = "Godot SpriteFrames exported  |  " + file_path
+	if file == null:
+		_report_export_failure("SpriteFrames")
+		return
+	file.store_string(SpriteFramesExporter.build_resource(_baked_output_frames().size(), "res://exports/frames/%s" % folder, frames_per_second))
+	file.close()
+	status_label.text = "Godot SpriteFrames exported  |  " + file_path
 
 func _canvas_to_image(source: PixelCanvas) -> Image:
 	return ImageExporter.canvas_to_image(source, CANVAS_PIXEL_SIZE)

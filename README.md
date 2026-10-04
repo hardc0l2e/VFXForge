@@ -125,6 +125,10 @@ errors are failures**.
 | Sprite sheet | Single PNG strip, configurable columns and padding |
 | `SpriteFrames` | Godot `.tres` resource with generated textures |
 
+Output goes to the project's `exports/` directory. In a packaged build `res://` is a read-only
+pack, so exports fall back to `user://exports` (`%APPDATA%/Godot/app_userdata/Haribon VFXForge/exports`)
+rather than silently writing nothing. Export failures are reported in the status bar.
+
 AnimatedTexture2D, GPUParticles2D scene export, shader resource export, and 3D bake are planned
 but not implemented.
 

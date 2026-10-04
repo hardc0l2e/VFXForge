@@ -29,6 +29,16 @@ const VFXBakeProfile = preload("res://core/vfx_bake_profile.gd")
 const FrameBaker = preload("res://core/frame_baker.gd")
 const FrameCompositor = preload("res://core/frame_compositor.gd")
 const SubViewportBaker = preload("res://core/subviewport_baker.gd")
+const MainShell = preload("res://scripts/main.gd")
+
+func test_writable_dir_creates_and_accepts_existing_directory() -> void:
+	var dir := "user://writable_probe"
+	DirAccess.remove_absolute(dir)
+	assert_true(MainShell._writable_dir(dir))
+	assert_true(DirAccess.dir_exists_absolute(dir))
+	assert_true(MainShell._writable_dir(dir))
+	assert_false(DirAccess.dir_exists_absolute(dir.path_join(".write_probe")))
+	DirAccess.remove_absolute(dir)
 
 func suite_name() -> String:
 	return "asset_pipeline"
@@ -60,6 +70,22 @@ func test_png_palette_loads_unique_colors() -> void:
 	var palette := PaletteLoader.load_png("res://raw/sample_palette.png")
 	assert_eq(palette.size(), 4)
 	assert_true(palette[0].a > 0.0)
+
+func test_palette_imported_resource_matches_source_file() -> void:
+	var path := "res://raw/sample_palette.png"
+	var texture := load(path) as Texture2D
+	assert_true(texture != null)
+	var resource_image := texture.get_image()
+	assert_true(resource_image != null)
+	var from_resource := PaletteLoader.colors_from_image(resource_image)
+	var from_file := PaletteLoader.load_png(path)
+	assert_eq(from_resource.size(), 4)
+	assert_eq(from_resource.size(), from_file.size())
+	for index in from_file.size():
+		assert_true(from_resource[index].is_equal_approx(from_file[index]))
+
+func test_palette_missing_source_returns_empty() -> void:
+	assert_true(PaletteLoader.load_png("res://palette/does_not_exist.png").is_empty())
 
 func test_palette_png_round_trip_preserves_color_count() -> void:
 	var path := "user://test_palette_roundtrip.png"
