@@ -3,6 +3,10 @@ extends "res://tests/harness/test_suite.gd"
 
 const VFXPipeline = preload("res://core/vfx_pipeline.gd")
 const RendererContract = preload("res://core/renderer_contract.gd")
+const PresetLibrary = preload("res://core/preset_library.gd")
+const GraphEvaluator = preload("res://core/graph_evaluator.gd")
+
+const IMPLEMENTED_NODES := ["Seed", "Burst", "Pixelize", "Palette", "Output"]
 
 var FIRE: Array[Color] = [Color("#fff4c2"), Color("#ffb03a"), Color("#ff6a2b"), Color("#c9314f")]
 
@@ -160,3 +164,34 @@ func test_bakeable_renderer_reports_no_warning() -> void:
 	assert_eq(result.warnings.size(), 0)
 	assert_true(result.bakeable)
 	assert_true(result.deterministic)
+
+func test_every_preset_graph_is_valid_and_uses_implemented_nodes() -> void:
+	for preset in PresetLibrary.builtins():
+		var name := String(preset.get("name", ""))
+		var graph := PresetLibrary.graph_for(name)
+		var nodes: Array = graph.nodes
+		var connections: Array = graph.connections
+		assert_true(nodes.size() >= 5, "preset '%s' graph is too small" % name)
+		for node in nodes:
+			assert_true(IMPLEMENTED_NODES.has(String(node.name)), "preset '%s' emits unimplemented node '%s'" % [name, node.name])
+		var evaluated := GraphEvaluator.evaluate(nodes, connections, {})
+		assert_true(bool(evaluated.valid), "preset '%s' graph does not validate" % name)
+		assert_eq(int(evaluated.resolution), 32, "preset '%s' lost its pixelize resolution" % name)
+		assert_eq(String(evaluated.renderer), RendererContract.PIXEL_CPU, "preset '%s' renderer" % name)
+
+func test_preset_graph_renders_through_the_pipeline() -> void:
+	for preset in PresetLibrary.builtins():
+		var name := String(preset.get("name", ""))
+		var graph := PresetLibrary.graph_for(name)
+		var result := VFXPipeline.render({
+			"canvas_size": Vector2i(32, 32),
+			"nodes": graph.nodes,
+			"connections": graph.connections,
+			"renderer_mode": RendererContract.PIXEL_CPU,
+			"preset_name": name,
+			"palette": FIRE,
+			"frame_count": 2,
+		})
+		assert_true(bool(result.valid_chain), "preset '%s' chain invalid through pipeline" % name)
+		assert_eq(result.frames.size(), 2, "preset '%s' frame count" % name)
+		assert_eq(result.warnings.size(), 0, "preset '%s' warned: %s" % [name, result.warnings])

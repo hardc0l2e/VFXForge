@@ -177,10 +177,14 @@ func test_vfx_presets_explain_projectile_and_aoe_recipes() -> void:
 
 func test_preset_graph_recipe_has_connected_stages() -> void:
 	var graph := PresetLibrary.graph_for("Projectile")
-	assert_eq(graph.get("nodes", []).size(), 4)
-	assert_eq(graph.get("nodes", [])[1].get("name"), "Head")
-	assert_eq(graph.get("nodes", [])[2].get("name"), "Trail")
-	assert_eq(graph.get("connections", []).size(), 3)
+	var nodes: Array = graph.get("nodes", [])
+	assert_eq(nodes.size(), 5)
+	assert_eq(nodes[0].get("name"), "Seed")
+	assert_eq(nodes[1].get("name"), "Burst")
+	assert_eq(nodes[2].get("name"), "Pixelize")
+	assert_eq(nodes[3].get("name"), "Palette")
+	assert_eq(nodes[4].get("name"), "Output")
+	assert_eq(graph.get("connections", []).size(), 4)
 
 func test_preset_preview_generator_produces_visible_frames() -> void:
 	var palette: Array[Color] = [Color.WHITE, Color("#78ffd9"), Color("#ff9b6a")]

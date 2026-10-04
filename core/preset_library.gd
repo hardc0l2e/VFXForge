@@ -25,15 +25,19 @@ static func find(name: String) -> Dictionary:
 			return preset
 	return {}
 
-static func graph_for(name: String) -> Dictionary:
-	var stage_names: Array = []
-	match name:
-		"Projectile": stage_names = ["Seed", "Head", "Trail", "Output"]
-		"Fireball Projectile": stage_names = ["Seed", "Core", "Trail", "Glow", "Output"]
-		"Spark Burst": stage_names = ["Seed", "Burst", "Sparks", "Output"]
-		"AOE Attack": stage_names = ["Seed", "Core", "Ring", "Sparks", "Output"]
-		"Lightning Sideways", "Lightning Downward": stage_names = ["Seed", "Bolt", "Glow", "Output"]
-		_: stage_names = ["Seed", "Burst", "Pixelize", "Palette", "Output"]
+## Node names the engine actually implements. Preset graphs must stay inside
+## this vocabulary: GraphEvaluator validates the Seed -> Burst -> Pixelize ->
+## Palette -> Output chain, and the graph editor has no registered definition
+## for anything else, so an unlisted name yields a node that neither renders
+## nor contributes to the output.
+##
+## Note this is deliberately separate from a preset's "recipe" field, which is
+## descriptive metadata about what the effect represents (["Head", "Trail",
+## "Output"]) and is not executable structure.
+const IMPLEMENTED_NODES := ["Seed", "Burst", "Pixelize", "Palette", "Output"]
+
+static func graph_for(_name: String) -> Dictionary:
+	var stage_names: Array = IMPLEMENTED_NODES
 	var graph_nodes: Array[Dictionary] = []
 	for index in stage_names.size():
 		var stage: String = String(stage_names[index])
