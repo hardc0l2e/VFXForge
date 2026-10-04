@@ -1,0 +1,8 @@
+{
+  "name": "Vector Offset",
+  "category": "Fields",
+  "description": "Offsets a vector field for procedural 2D effects.",
+  "inputs": ["vector"],
+  "outputs": ["vector"],
+  "parameters": {"amount": 1.0}
+}

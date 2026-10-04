@@ -1,0 +1,48 @@
+# Godot 4 generated import cache and per-user editor state.
+# Safe to delete; Godot regenerates it on first open.
+.godot/
+*.translation
+
+# Exported builds. HaribonVFXForge.exe alone is ~104 MB, so it must never
+# be committed. Release artifacts belong in GitHub Releases, not the repo.
+exports/
+export_templates/
+*.exe
+*.pck
+*.tmp
+*.bak
+*.TMP
+
+# Godot editor scratch directories created on first run.
+.freebuff/
+feature_profiles/
+script_templates/
+text_editor_themes/
+
+# Godot AI plugin update backups. The plugin itself (addons/godot_ai/) IS
+# tracked on purpose: tests/run_headless.gd preloads
+# res://addons/godot_ai/testing/test_runner.gd, so the test suite cannot run
+# without it. Only the downloaded update payloads and backups are ignored.
+addons/.godot_ai_update/
+
+# Proprietary binary design sources. Keep them locally or use Git LFS.
+*.ai
+*.psd
+
+# Local development-environment tooling, intentionally not published.
+# addons/godot_ai is an editor/MCP plugin used for AI-assisted development.
+# The test harness it provided has been vendored into tests/harness/, so the
+# repository's own test suite is self-contained without it.
+addons/
+
+# Local agent handoff / session notes. Development-internal: kept on disk for
+# continuity but intentionally not published to the repository.
+AGENT_HANDOFF.md
+SESSION_HANDOFF.md
+
+# OS and editor cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+*.swp

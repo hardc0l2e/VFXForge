@@ -1,0 +1,38 @@
+# Normalize line endings in the repository to LF, and check them out as LF.
+# Without this, Windows clones (core.autocrlf=true) produce whole-file diffs
+# against LF-stored content and contributions conflict on whitespace alone.
+* text=auto eol=lf
+
+# Godot text resources
+*.gd text eol=lf
+*.gdshader text eol=lf
+*.gdshaderinc text eol=lf
+*.tscn text eol=lf
+*.tres text eol=lf
+*.godot text eol=lf
+*.cfg text eol=lf
+*.import text eol=lf
+*.uid text eol=lf
+
+# Project data and docs
+*.json text eol=lf
+*.md text eol=lf
+*.svg text eol=lf
+LICENSE text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Godot export presets are conventionally CRLF; leave as-is.
+export_presets.cfg -text
+
+# Binary assets
+*.png binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.exe binary
+*.pck binary
+*.zip binary
